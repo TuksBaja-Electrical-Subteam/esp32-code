@@ -22,7 +22,7 @@ void init_pcnt(void) {
     pcnt_unit_config_t unit_config = {
         .high_limit = 2000,
         .low_limit = -2000,
-    };
+    }; 
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
 
     pcnt_chan_config_t chan_config = {
