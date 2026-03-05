@@ -1,20 +1,3 @@
 {
-  "C_Cpp.intelliSenseEngine": "default",
-  "idf.espIdfPathWin": "C:\\Users\\sdash\\esp\\v5.5.2\\esp-idf",
-  "idf.pythonInstallPath": "C:\\Users\\sdash\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
-  "idf.openOcdConfigs": [
-    "board/esp32-wrover-kit-3.3v.cfg"
-  ],
-  "idf.portWin": "COM8",
-  "idf.toolsPathWin": "C:\\Users\\sdash\\.espressif",
-  "idf.customExtraVars": {
-    "IDF_TARGET": "esp32"
-  },
-  "clangd.path": "C:\\Users\\sdash\\.espressif\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
-  "clangd.arguments": [
-    "--background-index",
-    "--query-driver=**",
-    "--compile-commands-dir=c:\\Users\\sdash\\Documents\\GitHub\\microcontroller-arduino\\baja-dashboard\\baja-main-dashboard\\build"
-  ],
-  "idf.currentSetup": "C:\\Users\\sdash\\esp\\v5.5.2\\esp-idf"
+    "idf.currentSetup": "/Users/moagimoja/esp/v5.5.1/esp-idf"
 }

@@ -8,4 +8,7 @@ idf_component_register(
         "."
     EMBED_FILES 
         "index.html"
+    REQUIRES
+        lvgl
+    
 )
