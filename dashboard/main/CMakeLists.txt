@@ -1,14 +1,19 @@
 idf_component_register(
     SRCS 
-        "main.c" 
-        "speed_calculator.c" 
-        "wifi_manager.c" 
+        "main.c"
         "web_server.c"
-    INCLUDE_DIRS 
-        "."
-    EMBED_FILES 
-        "index.html"
-    REQUIRES
-        lvgl
-    
+        "gps_handler.c"
+        "wifi_manager.c"
+        "speed_calculator.c"
+    INCLUDE_DIRS "."
+    EMBED_FILES "index.html"
+    REQUIRES 
+        esp_http_server
+        nvs_flash
+        esp_wifi
+        driver
+        esp_netif
+        esp_event
+    PRIV_REQUIRES
+        esp_timer
 )

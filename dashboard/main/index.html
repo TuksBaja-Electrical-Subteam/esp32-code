@@ -1,74 +1,1153 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>BAJA PRO</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        :root { --glow: #ff5500; --bg: #0a0a0a; --card: #161616; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; max-width: 600px; margin: auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #333; }
-        .full { grid-column: span 2; }
-        #speed { font-size: 80px; font-weight: bold; color: var(--glow); text-shadow: 0 0 20px var(--glow); }
-        .unit { color: #666; font-size: 14px; text-transform: uppercase; }
-        canvas { background: #000; border-radius: 15px; width: 100%; height: 200px; border: 1px solid #333; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAJA Dash PRO</title>
+  <style>
+    :root {
+      /* Dark mode base */
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-card: #1f2937;
+      --bg-card-hover: #2d3748;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+      
+      /* Pastel accent colors */
+      --pastel-blue: #a7c7e7;
+      --pastel-green: #b5e7a0;
+      --pastel-pink: #ffb7b2;
+      --pastel-yellow: #fdfd96;
+      --pastel-purple: #c8b6ff;
+      --pastel-orange: #ffcc99;
+      
+      /* Status colors */
+      --status-good: #86efac;
+      --status-warn: #fbbf24;
+      --status-bad: #f87171;
+      
+      /* Spacing & layout */
+      --card-radius: 12px;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --gap: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      padding: var(--gap);
+      min-height: 100vh;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 16px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: var(--gap);
+    }
+
+    .dashboard-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--pastel-blue);
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--status-bad);
+      transition: background 0.3s;
+    }
+    .status-dot.connected { background: var(--status-good); }
+    .status-dot.connecting { background: var(--status-warn); }
+
+    /* Grid layout for 5 cards */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--gap);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 16px;
+      box-shadow: var(--card-shadow);
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .card:hover { border-color: var(--pastel-purple); }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--pastel-yellow);
+    }
+
+    /* ===== 1. Live Telemetry Panel ===== */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .telemetry-item {
+      background: var(--bg-secondary);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .telemetry-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .telemetry-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--pastel-green);
+    }
+
+    .telemetry-value.warn { color: var(--status-warn); }
+    .telemetry-value.bad { color: var(--status-bad); }
+
+    .gps-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+    }
+    .gps-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--status-bad);
+    }
+    .gps-indicator.fix-3d { background: var(--status-good); }
+    .gps-indicator.fix-2d { background: var(--status-warn); }
+
+    /* ===== 2. Track Map Viewer ===== */
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #trackCanvas, #markerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #markerCanvas { pointer-events: none; }
+
+    .map-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-track { background: var(--pastel-blue); }
+    .legend-car { background: var(--pastel-pink); }
+
+    /* ===== 3. Session Manager ===== */
+    .session-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--pastel-purple);
+      color: var(--bg-primary);
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn.stop { background: var(--pastel-pink); }
+    .btn.refresh { background: var(--pastel-blue); }
+
+    .session-list {
+      max-height: 150px;
+      overflow-y: auto;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .session-item {
+      padding: 8px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+    }
+    .session-item:hover { background: var(--bg-card-hover); }
+    .session-item:last-child { border-bottom: none; }
+    .session-item.active { border-left: 3px solid var(--pastel-green); }
+
+    .session-meta { color: var(--text-secondary); font-size: 0.75rem; }
+
+    /* ===== 4. Lap Analysis Charts ===== */
+    .chart-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chart-select {
+      flex: 1;
+      min-width: 120px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .chart-container {
+      height: 200px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      position: relative;
+    }
+
+    #lapChart { width: 100%; height: 100%; }
+
+    /* ===== 5. Track Builder ===== */
+    .track-builder-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .record-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      padding: 8px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+    }
+    .record-status.recording { color: var(--status-bad); }
+    .record-pulse {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .track-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 0.875rem;
+    }
+    .stat-item { text-align: center; }
+    .stat-value { font-weight: 700; color: var(--pastel-orange); }
+
+    .file-upload {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 2px dashed var(--border-color);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .file-upload:hover { border-color: var(--pastel-blue); }
+    .file-upload input { display: none; }
+
+    /* ===== Utility ===== */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .mt-2 { margin-top: 8px; }
+    .mb-2 { margin-bottom: 8px; }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--pastel-purple); }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .telemetry-grid { grid-template-columns: 1fr; }
+      .track-stats { grid-template-columns: repeat(2, 1fr); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-    <h2 style="margin-top:20px; letter-spacing:4px;">BAJA <span style="color:var(--glow)">PRO</span></h2>
-    <div class="grid">
-        <div class="card full">
-            <div id="speed">0.0</div>
-            <div class="unit">Kilometers Per Hour</div>
-        </div>
-        <div class="card">
-            <div id="dist" style="font-size:24px;">0.000</div>
-            <div class="unit">Distance (KM)</div>
-        </div>
-        <div class="card">
-            <div id="coords" style="font-size:12px; color:#aaa;">Searching...</div>
-            <div class="unit">GPS Position</div>
-        </div>
-        <div class="card full">
-            <div class="unit" style="margin-bottom:10px;">Live Track Plotter</div>
-            <canvas id="track"></canvas>
-        </div>
+  <header class="dashboard-header">
+    <h1 class="dashboard-title">🏁 BAJA Dash PRO</h1>
+    <div class="connection-status">
+      <div id="wsStatus" class="status-dot"></div>
+      <span id="wsText">Disconnected</span>
     </div>
+  </header>
 
-    <script>
-        const canvas = document.getElementById('track');
-        const ctx = canvas.getContext('2d');
-        let points = [];
+  <main class="dashboard-grid">
+    
+    <!-- 1. Live Telemetry Panel -->
+    <section class="card" id="telemetry-card">
+      <div class="card-header">
+        <h2 class="card-title">📊 Live Telemetry</h2>
+        <span id="sessionBadge" class="telemetry-value" style="font-size:1rem">IDLE</span>
+      </div>
+      <div class="telemetry-grid">
+        <div class="telemetry-item">
+          <div class="telemetry-label">Speed</div>
+          <div id="speedVal" class="telemetry-value">0.0</div>
+          <div style="font-size:0.75rem;color:var(--text-secondary)">km/h</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-label">Lap</div>
+          <div id="lapVal" class="telemetry-value">-</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-label">GPS Fix</div>
+          <div class="gps-status">
+            <div id="gpsIndicator" class="gps-indicator"></div>
+            <span id="gpsText">No Fix</span>
+          </div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-label">Track Progress</div>
+          <div id="trackPctVal" class="telemetry-value">0.0%</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-label">Slip Left</div>
+          <div id="slipLVal" class="telemetry-value">0.0%</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-label">Slip Right</div>
+          <div id="slipRVal" class="telemetry-value">0.0%</div>
+        </div>
+      </div>
+    </section>
 
-        function update() {
-            fetch('/data').then(r => r.text()).then(v => {
-                const [speed, dist, lat, lon] = v.split(',');
-                document.getElementById('speed').innerText = speed;
-                document.getElementById('dist').innerText = dist;
-                document.getElementById('coords').innerText = `${lat}, ${lon}`;
-                
-                // Add to track
-                if(lat != 0) {
-                    points.push({x: parseFloat(lon), y: parseFloat(lat)});
-                    drawTrack();
-                }
-            });
+    <!-- 2. Track Map Viewer -->
+    <section class="card" id="map-card">
+      <div class="card-header">
+        <h2 class="card-title">🗺️ Track Map</h2>
+        <span id="mapStatus" style="font-size:0.75rem;color:var(--text-secondary)">Loading...</span>
+      </div>
+      <div class="map-container">
+        <canvas id="trackCanvas"></canvas>
+        <canvas id="markerCanvas"></canvas>
+      </div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot legend-track"></div> Track</div>
+        <div class="legend-item"><div class="legend-dot legend-car"></div> Car</div>
+      </div>
+    </section>
+
+    <!-- 3. Session Manager -->
+    <section class="card" id="session-card">
+      <div class="card-header">
+        <h2 class="card-title">📁 Session Manager</h2>
+      </div>
+      <div class="session-controls">
+        <button id="btnStart" class="btn">▶ Start</button>
+        <button id="btnStop" class="btn stop" disabled>■ Stop</button>
+        <button id="btnRefresh" class="btn refresh">↻</button>
+      </div>
+      <div class="session-list" id="sessionList">
+        <div class="text-center" style="color:var(--text-secondary);padding:12px">No sessions found</div>
+      </div>
+      <button id="btnDownload" class="btn mt-2" disabled>⬇ Download Selected</button>
+    </section>
+
+    <!-- 4. Lap Analysis Charts -->
+    <section class="card" id="chart-card">
+      <div class="card-header">
+        <h2 class="card-title">📈 Lap Analysis</h2>
+      </div>
+      <div class="chart-controls">
+        <select id="chartSession" class="chart-select">
+          <option value="">Select session...</option>
+        </select>
+        <select id="chartMetric" class="chart-select">
+          <option value="speed">Speed (km/h)</option>
+          <option value="slip_l">Wheel Slip L (%)</option>
+          <option value="slip_r">Wheel Slip R (%)</option>
+        </select>
+        <button id="btnPlot" class="btn" style="flex:0;min-width:80px">Plot</button>
+      </div>
+      <div class="chart-container">
+        <canvas id="lapChart"></canvas>
+      </div>
+    </section>
+
+    <!-- 5. Track Builder -->
+    <section class="card" id="trackbuilder-card">
+      <div class="card-header">
+        <h2 class="card-title">🛠️ Track Builder</h2>
+      </div>
+      <div class="track-builder-controls">
+        <div class="record-status" id="recordStatus">
+          <span>● Ready to record</span>
+        </div>
+        <div class="session-controls">
+          <button id="btnRecordStart" class="btn">⏺ Start Recording</button>
+          <button id="btnRecordStop" class="btn stop" disabled>⏹ Stop & Save</button>
+        </div>
+        <div class="track-stats">
+          <div class="stat-item">
+            <div class="stat-value" id="pointsCount">0</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary)">Points</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="trackDistance">0.0</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary)">km</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="recordTime">00:00</div>
+            <div style="font-size:0.7rem;color:var(--text-secondary)">Duration</div>
+          </div>
+        </div>
+        <label class="file-upload">
+          <input type="file" id="geojsonUpload" accept=".geojson,.json"/>
+          <span>📤 Import GeoJSON Track</span>
+        </label>
+        <button id="btnUploadTrack" class="btn" disabled>Upload to ESP32</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ===== GLOBAL STATE =====
+    const CONFIG = {
+      wsUrl: 'ws://192.168.4.1/ws',
+      baseUrl: 'http://192.168.4.1',
+      wsReconnectDelay: 500,
+      minTrackPointDistance: 5, // meters
+      rdpEpsilon: 1.0 // meters for simplification
+    };
+
+    let ws = null;
+    let wsConnected = false;
+    let latestFrame = {}; // Buffered latest WebSocket frame
+    let recordedTrack = []; // For track builder
+    let trackGeoJSON = null; // Loaded track outline
+    let trackBounds = null; // {minLat, maxLat, minLon, maxLon}
+    let chartData = {}; // Cached session data for charts
+    let testMode = false; // Toggle for dummy data testing
+
+    // ===== DOM ELEMENTS =====
+    const els = {
+      wsStatus: document.getElementById('wsStatus'),
+      wsText: document.getElementById('wsText'),
+      speedVal: document.getElementById('speedVal'),
+      lapVal: document.getElementById('lapVal'),
+      gpsIndicator: document.getElementById('gpsIndicator'),
+      gpsText: document.getElementById('gpsText'),
+      trackPctVal: document.getElementById('trackPctVal'),
+      slipLVal: document.getElementById('slipLVal'),
+      slipRVal: document.getElementById('slipRVal'),
+      sessionBadge: document.getElementById('sessionBadge'),
+      trackCanvas: document.getElementById('trackCanvas'),
+      markerCanvas: document.getElementById('markerCanvas'),
+      mapStatus: document.getElementById('mapStatus'),
+      sessionList: document.getElementById('sessionList'),
+      btnStart: document.getElementById('btnStart'),
+      btnStop: document.getElementById('btnStop'),
+      btnRefresh: document.getElementById('btnRefresh'),
+      btnDownload: document.getElementById('btnDownload'),
+      chartSession: document.getElementById('chartSession'),
+      chartMetric: document.getElementById('chartMetric'),
+      btnPlot: document.getElementById('btnPlot'),
+      lapChart: document.getElementById('lapChart'),
+      recordStatus: document.getElementById('recordStatus'),
+      btnRecordStart: document.getElementById('btnRecordStart'),
+      btnRecordStop: document.getElementById('btnRecordStop'),
+      pointsCount: document.getElementById('pointsCount'),
+      trackDistance: document.getElementById('trackDistance'),
+      recordTime: document.getElementById('recordTime'),
+      geojsonUpload: document.getElementById('geojsonUpload'),
+      btnUploadTrack: document.getElementById('btnUploadTrack')
+    };
+
+    // ===== WEBSOCKET MANAGEMENT =====
+    function connectWebSocket() {
+      if (wsConnected || testMode) return;
+      
+      els.wsStatus.className = 'status-dot connecting';
+      els.wsText.textContent = 'Connecting...';
+      
+      try {
+        ws = new WebSocket(CONFIG.wsUrl);
+      } catch (e) {
+        console.warn('WebSocket creation failed:', e);
+        scheduleReconnect();
+        return;
+      }
+
+      ws.onopen = () => {
+        wsConnected = true;
+        els.wsStatus.className = 'status-dot connected';
+        els.wsText.textContent = 'Connected';
+        console.log('✓ WebSocket connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          latestFrame = JSON.parse(event.data);
+          // Sync session state to UI
+          if (latestFrame.session) {
+            updateSessionUI(latestFrame.session);
+          }
+        } catch (e) {
+          console.error('JSON parse error:', e);
         }
+      };
 
-        function drawTrack() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#ff5500';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            // Simple auto-scaling logic would go here
-            points.forEach((p, i) => {
-                const px = (p.x % 1) * 5000; // Visual scale factor
-                const py = (p.y % 1) * 5000;
-                if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-            });
-            ctx.stroke();
+      ws.onclose = () => {
+        wsConnected = false;
+        els.wsStatus.className = 'status-dot';
+        els.wsText.textContent = 'Disconnected';
+        console.warn('✗ WebSocket closed - reconnecting...');
+        scheduleReconnect();
+      };
+
+      ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+        ws.close();
+      };
+    }
+
+    function scheduleReconnect() {
+      setTimeout(() => {
+        if (!wsConnected && !testMode) {
+          CONFIG.wsReconnectDelay = Math.min(CONFIG.wsReconnectDelay * 2, 5000);
+          connectWebSocket();
         }
-        setInterval(update, 500);
-    </script>
+      }, CONFIG.wsReconnectDelay);
+    }
+
+    // ===== RENDER LOOP (requestAnimationFrame) =====
+    function renderTelemetry() {
+      if (Object.keys(latestFrame).length === 0) {
+        requestAnimationFrame(renderTelemetry);
+        return;
+      }
+
+      // Speed: m/s → km/h
+      const speedKmh = (latestFrame.speed_ms || 0) * 3.6;
+      els.speedVal.textContent = speedKmh.toFixed(1);
+
+      // Lap number
+      els.lapVal.textContent = latestFrame.lap !== undefined ? latestFrame.lap : '-';
+
+      // GPS Fix status (requires hdop/fix field from ESP32)
+      const fix = latestFrame.fix || latestFrame.hdop;
+      if (fix !== undefined) {
+        if (fix === 3 || (typeof fix === 'number' && fix < 2)) {
+          els.gpsIndicator.className = 'gps-indicator fix-3d';
+          els.gpsText.textContent = '3D Fix';
+        } else if (fix === 2) {
+          els.gpsIndicator.className = 'gps-indicator fix-2d';
+          els.gpsText.textContent = '2D Fix';
+        } else {
+          els.gpsIndicator.className = 'gps-indicator';
+          els.gpsText.textContent = 'No Fix';
+        }
+      }
+
+      // Track progress
+      if (latestFrame.track_pct !== undefined) {
+        els.trackPctVal.textContent = latestFrame.track_pct.toFixed(1) + '%';
+      }
+
+      // Wheel slip (positive = wheel faster than vehicle speed)
+      const slipL = (latestFrame.wheel_slip_l || 0) * 100;
+      const slipR = (latestFrame.wheel_slip_r || 0) * 100;
+      els.slipLVal.textContent = slipL.toFixed(1) + '%';
+      els.slipRVal.textContent = slipR.toFixed(1) + '%';
+      
+      // Color-code slip warnings
+      els.slipLVal.className = 'telemetry-value' + (Math.abs(slipL) > 15 ? ' warn' : '');
+      els.slipRVal.className = 'telemetry-value' + (Math.abs(slipR) > 15 ? ' warn' : '');
+
+      // Update track map marker if we have position
+      if (latestFrame.lat && latestFrame.lon && trackBounds) {
+        drawCarMarker(latestFrame.lat, latestFrame.lon);
+      }
+
+      requestAnimationFrame(renderTelemetry);
+    }
+
+    // ===== TRACK MAP (Canvas 2D, two-layer) =====
+    function initMapCanvas() {
+      const resize = () => {
+        [els.trackCanvas, els.markerCanvas].forEach(canvas => {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+        });
+        if (trackGeoJSON) drawTrackOutline();
+      };
+      window.addEventListener('resize', resize);
+      resize();
+    }
+
+    function computeTrackBounds(geojson) {
+      const coords = geojson.coordinates;
+      let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+      for (const [lon, lat] of coords) {
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+      }
+      // Add 10% padding
+      const latPad = (maxLat - minLat) * 0.1 || 0.01;
+      const lonPad = (maxLon - minLon) * 0.1 || 0.01;
+      return {
+        minLat: minLat - latPad, maxLat: maxLat + latPad,
+        minLon: minLon - lonPad, maxLon: maxLon + lonPad
+      };
+    }
+
+    function latLonToPixel(lat, lon, bounds, canvas) {
+      const x = ((lon - bounds.minLon) / (bounds.maxLon - bounds.minLon)) * canvas.width;
+      const y = ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * canvas.height;
+      return { x, y };
+    }
+
+    function drawTrackOutline() {
+      if (!trackGeoJSON || !trackBounds) return;
+      const ctx = els.trackCanvas.getContext('2d');
+      ctx.clearRect(0, 0, els.trackCanvas.width, els.trackCanvas.height);
+      
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-blue');
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      const coords = trackGeoJSON.coordinates;
+      const start = latLonToPixel(coords[0][1], coords[0][0], trackBounds, els.trackCanvas);
+      ctx.moveTo(start.x, start.y);
+      
+      for (let i = 1; i < coords.length; i++) {
+        const p = latLonToPixel(coords[i][1], coords[i][0], trackBounds, els.trackCanvas);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+      els.mapStatus.textContent = 'Track loaded';
+    }
+
+    let lastCarPos = null;
+    function drawCarMarker(lat, lon) {
+      const ctx = els.markerCanvas.getContext('2d');
+      ctx.clearRect(0, 0, els.markerCanvas.width, els.markerCanvas.height);
+      
+      const pos = latLonToPixel(lat, lon, trackBounds, els.markerCanvas);
+      
+      // Draw car dot
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-pink');
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw orientation arrow (if we have previous position)
+      if (lastCarPos) {
+        const angle = Math.atan2(pos.y - lastCarPos.y, pos.x - lastCarPos.x);
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(angle);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-orange');
+        ctx.beginPath();
+        ctx.moveTo(12, 0);
+        ctx.lineTo(-4, -4);
+        ctx.lineTo(-4, 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      lastCarPos = pos;
+    }
+
+    async function loadTrackMap() {
+      try {
+        const res = await fetch(CONFIG.baseUrl + '/track/map');
+        if (!res.ok) throw new Error('Track not found');
+        trackGeoJSON = await res.json();
+        trackBounds = computeTrackBounds(trackGeoJSON);
+        drawTrackOutline();
+      } catch (e) {
+        console.warn('Could not load track map:', e);
+        els.mapStatus.textContent = 'No track loaded';
+      }
+    }
+
+    // ===== SESSION MANAGER =====
+    function updateSessionUI(state) {
+      const isActive = state === 'active';
+      els.btnStart.disabled = isActive;
+      els.btnStop.disabled = !isActive;
+      els.sessionBadge.textContent = isActive ? 'ACTIVE' : 'IDLE';
+      els.sessionBadge.style.color = isActive ? 'var(--status-good)' : 'var(--text-secondary)';
+    }
+
+    async function fetchSessions() {
+      try {
+        const res = await fetch(CONFIG.baseUrl + '/sessions');
+        if (!res.ok) return [];
+        const sessions = await res.json();
+        renderSessionList(sessions);
+        return sessions;
+      } catch (e) {
+        console.warn('Failed to fetch sessions:', e);
+        return [];
+      }
+    }
+
+    function renderSessionList(sessions) {
+      if (!sessions || sessions.length === 0) {
+        els.sessionList.innerHTML = '<div class="text-center" style="color:var(--text-secondary);padding:12px">No sessions found</div>';
+        els.chartSession.innerHTML = '<option value="">Select session...</option>';
+        els.btnDownload.disabled = true;
+        return;
+      }
+
+      els.sessionList.innerHTML = '';
+      els.chartSession.innerHTML = '<option value="">Select session...</option>';
+      
+      sessions.forEach((sess, idx) => {
+        // Session list item
+        const item = document.createElement('div');
+        item.className = 'session-item';
+        item.dataset.id = sess.id;
+        item.innerHTML = `
+          <div>
+            <div>${sess.name || 'Session ' + (idx + 1)}</div>
+            <div class="session-meta">${sess.duration}s • ${sess.laps || 0} laps</div>
+          </div>
+          <div style="color:var(--pastel-blue)">${(sess.size / 1024).toFixed(1)} KB</div>
+        `;
+        item.onclick = () => {
+          document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          els.btnDownload.disabled = false;
+          els.btnDownload.dataset.sessionId = sess.id;
+          
+          // Also populate chart dropdown
+          const opt = document.createElement('option');
+          opt.value = sess.id;
+          opt.textContent = sess.name || 'Session ' + (idx + 1);
+          els.chartSession.appendChild(opt);
+          els.chartSession.value = sess.id;
+        };
+        els.sessionList.appendChild(item);
+        
+        // Chart dropdown option
+        const opt = document.createElement('option');
+        opt.value = sess.id;
+        opt.textContent = sess.name || 'Session ' + (idx + 1);
+        els.chartSession.appendChild(opt);
+      });
+    }
+
+    els.btnStart.onclick = async () => {
+      els.btnStart.disabled = true;
+      try {
+        await fetch(CONFIG.baseUrl + '/session/start', { method: 'POST' });
+        updateSessionUI('active');
+      } catch (e) {
+        console.error('Start failed:', e);
+        els.btnStart.disabled = false;
+      }
+    };
+
+    els.btnStop.onclick = async () => {
+      els.btnStop.disabled = true;
+      try {
+        await fetch(CONFIG.baseUrl + '/session/stop', { method: 'POST' });
+        updateSessionUI('idle');
+        fetchSessions(); // Refresh list
+      } catch (e) {
+        console.error('Stop failed:', e);
+        els.btnStop.disabled = false;
+      }
+    };
+
+    els.btnRefresh.onclick = () => fetchSessions();
+
+    els.btnDownload.onclick = async () => {
+      const id = els.btnDownload.dataset.sessionId;
+      if (!id) return;
+      window.location.href = CONFIG.baseUrl + '/data/replay?id=' + id;
+    };
+
+    // ===== LAP ANALYSIS CHARTS (Chart.js minimal) =====
+    // Inline minimal Chart.js-like renderer to save SPIFFS space
+    function initChartCanvas() {
+      const ctx = els.lapChart.getContext('2d');
+      // Clear
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-secondary');
+      ctx.fillRect(0, 0, els.lapChart.width, els.lapChart.height);
+      
+      // Axes
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color');
+      ctx.beginPath();
+      ctx.moveTo(40, 10);
+      ctx.lineTo(40, els.lapChart.height - 30);
+      ctx.lineTo(els.lapChart.width - 10, els.lapChart.height - 30);
+      ctx.stroke();
+      
+      // Labels
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
+      ctx.font = '10px sans-serif';
+      ctx.fillText('Track %', 10, els.lapChart.height - 15);
+      ctx.fillText('Value', 15, 20);
+    }
+
+    function plotLapData(sessionId, metric) {
+      // In real app: fetch CSV, parse, decimate, plot
+      // For demo: show placeholder
+      const ctx = els.lapChart.getContext('2d');
+      ctx.clearRect(0, 0, els.lapChart.width, els.lapChart.height);
+      initChartCanvas();
+      
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pastel-green');
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Plotting ${metric} for session ${sessionId}`, els.lapChart.width/2, els.lapChart.height/2);
+      
+      // TODO: Implement CSV fetch + Ramer-Douglas-Peucker decimation + Chart.js rendering
+    }
+
+    els.btnPlot.onclick = () => {
+      const sessionId = els.chartSession.value;
+      const metric = els.chartMetric.value;
+      if (!sessionId) {
+        alert('Please select a session first');
+        return;
+      }
+      plotLapData(sessionId, metric);
+    };
+
+    // ===== TRACK BUILDER =====
+    let recording = false;
+    let recordStartTime = null;
+    let lastRecordedPoint = null;
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in meters
+      const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+      const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
+      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // Ramer-Douglas-Peucker simplification
+    function rdp(points, epsilon) {
+      if (points.length < 3) return points;
+      
+      let dmax = 0, index = 0;
+      const end = points.length - 1;
+      
+      for (let i = 1; i < end; i++) {
+        const d = perpendicularDistance(points[i], points[0], points[end]);
+        if (d > dmax) { index = i; dmax = d; }
+      }
+      
+      if (dmax > epsilon) {
+        const left = rdp(points.slice(0, index+1), epsilon);
+        const right = rdp(points.slice(index), epsilon);
+        return left.slice(0, -1).concat(right);
+      }
+      return [points[0], points[end]];
+    }
+    
+    function perpendicularDistance(point, lineStart, lineEnd) {
+      const [x0, y0] = [lineStart[1], lineStart[0]]; // lat,lon → y,x
+      const [x1, y1] = [lineEnd[1], lineEnd[0]];
+      const [x2, y2] = [point[1], point[0]];
+      
+      const A = x1 - x0, B = y1 - y0;
+      const t = Math.max(0, Math.min(1, ((x2-x0)*A + (y2-y0)*B) / (A*A + B*B)));
+      const projX = x0 + t * A, projY = y0 + t * B;
+      
+      return Math.hypot(x2 - projX, y2 - projY);
+    }
+
+    els.btnRecordStart.onclick = () => {
+      recording = true;
+      recordedTrack = [];
+      lastRecordedPoint = null;
+      recordStartTime = Date.now();
+      
+      els.btnRecordStart.disabled = true;
+      els.btnRecordStop.disabled = false;
+      els.recordStatus.className = 'record-status recording';
+      els.recordStatus.innerHTML = '<div class="record-pulse"></div><span>Recording...</span>';
+      
+      // Start recording interval
+      recordInterval = setInterval(updateTrackRecording, 100);
+    };
+
+    els.btnRecordStop.onclick = async () => {
+      recording = false;
+      clearInterval(recordInterval);
+      
+      els.btnRecordStart.disabled = false;
+      els.btnRecordStop.disabled = true;
+      els.recordStatus.className = 'record-status';
+      els.recordStatus.textContent = '● Processing...';
+      
+      // Simplify track
+      const simplified = rdp(recordedTrack, CONFIG.rdpEpsilon);
+      
+      // Validate closed loop
+      const start = simplified[0], end = simplified[simplified.length-1];
+      const dist = haversine(start[0], start[1], end[0], end[1]);
+      if (dist > 10) {
+        alert(`⚠ Track not closed! Start-end distance: ${dist.toFixed(1)}m (should be <10m)`);
+      }
+      
+      // Build GeoJSON
+      const geojson = {
+        type: 'LineString',
+        coordinates: simplified.map(p => [p[1], p[0]]) // [lon, lat]
+      };
+      
+      // Upload to ESP32
+      try {
+        await fetch(CONFIG.baseUrl + '/track/map', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geojson)
+        });
+        els.recordStatus.textContent = '✓ Track saved to ESP32';
+        els.btnUploadTrack.disabled = true;
+      } catch (e) {
+        console.error('Upload failed:', e);
+        els.recordStatus.textContent = '✗ Upload failed';
+      }
+    };
+
+    function updateTrackRecording() {
+      if (!recording || !latestFrame.lat || !latestFrame.lon) return;
+      
+      const point = [latestFrame.lat, latestFrame.lon];
+      
+      // Minimum distance filter
+      if (lastRecordedPoint) {
+        const dist = haversine(lastRecordedPoint[0], lastRecordedPoint[1], point[0], point[1]);
+        if (dist < CONFIG.minTrackPointDistance) return;
+      }
+      
+      recordedTrack.push(point);
+      lastRecordedPoint = point;
+      
+      // Update stats
+      els.pointsCount.textContent = recordedTrack.length;
+      
+      // Estimate distance (sum of segments)
+      let total = 0;
+      for (let i = 1; i < recordedTrack.length; i++) {
+        total += haversine(
+          recordedTrack[i-1][0], recordedTrack[i-1][1],
+          recordedTrack[i][0], recordedTrack[i][1]
+        );
+      }
+      els.trackDistance.textContent = (total / 1000).toFixed(2);
+      
+      // Update time
+      const secs = Math.floor((Date.now() - recordStartTime) / 1000);
+      els.recordTime.textContent = 
+        String(Math.floor(secs/60)).padStart(2,'0') + ':' + 
+        String(secs%60).padStart(2,'0');
+    }
+
+    // GeoJSON file import
+    els.geojsonUpload.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const geojson = JSON.parse(evt.target.result);
+          if (geojson.type === 'LineString' && geojson.coordinates) {
+            trackGeoJSON = geojson;
+            trackBounds = computeTrackBounds(geojson);
+            drawTrackOutline();
+            els.btnUploadTrack.disabled = false;
+            alert('✓ GeoJSON loaded. Click "Upload to ESP32" to save.');
+          } else {
+            alert('Invalid GeoJSON format. Expected LineString.');
+          }
+        } catch (err) {
+          alert('Failed to parse GeoJSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    els.btnUploadTrack.onclick = async () => {
+      if (!trackGeoJSON) return;
+      try {
+        await fetch(CONFIG.baseUrl + '/track/map', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(trackGeoJSON)
+        });
+        alert('✓ Track uploaded to ESP32');
+        els.btnUploadTrack.disabled = true;
+      } catch (e) {
+        alert('Upload failed: ' + e.message);
+      }
+    };
+
+    // ===== TEST MODE: DUMMY DATA GENERATOR =====
+    function startTestMode() {
+      testMode = true;
+      els.wsStatus.className = 'status-dot connected';
+      els.wsText.textContent = 'TEST MODE';
+      console.log('🧪 Test mode enabled - generating dummy telemetry');
+      
+      let lap = 1, trackPct = 0, session = 'idle';
+      const baseLat = -25.7821, baseLon = 28.2741;
+      
+      setInterval(() => {
+        // Simulate realistic telemetry
+        const speed = 5 + 15 * Math.sin(Date.now() / 2000); // 5-20 m/s oscillation
+        const slipL = (Math.random() - 0.5) * 0.1;
+        const slipR = (Math.random() - 0.5) * 0.1;
+        
+        // Simulate GPS movement along a circular track
+        trackPct = (trackPct + 0.5) % 100;
+        const angle = (trackPct / 100) * Math.PI * 2;
+        const lat = baseLat + 0.001 * Math.sin(angle);
+        const lon = baseLon + 0.001 * Math.cos(angle);
+        
+        // Simulate lap completion
+        if (trackPct < 0.5 && latestFrame.track_pct > 99) lap++;
+        
+        // Random session state changes for testing
+        if (Math.random() < 0.01) {
+          session = session === 'active' ? 'idle' : 'active';
+          updateSessionUI(session);
+        }
+        
+        // Build frame matching ESP32 schema (+ hdop for GPS quality)
+        const frame = {
+          ts: Date.now(),
+          speed_ms: Math.max(0, speed),
+          lat: lat,
+          lon: lon,
+          track_pct: trackPct,
+          lap: lap,
+          wheel_slip_l: slipL,
+          wheel_slip_r: slipR,
+          session: session,
+          hdop: 0.8 + Math.random() * 1.5 // Simulate varying GPS quality
+        };
+        
+        latestFrame = frame;
+      }, 100); // 10 Hz
+    }
+
+    // ===== INITIALIZATION =====
+    function init() {
+      // Canvas setup
+      initMapCanvas();
+      initChartCanvas();
+      
+      // Load track map if available
+      loadTrackMap();
+      
+      // Fetch initial sessions
+      fetchSessions();
+      
+      // Connect WebSocket (or start test mode)
+      if (window.location.hostname === '192.168.4.1') {
+        connectWebSocket();
+      } else {
+        console.log('🧪 Running outside ESP32 AP - enabling test mode');
+        startTestMode();
+      }
+      
+      // Start render loop
+      requestAnimationFrame(renderTelemetry);
+      
+      // Keyboard shortcut for test mode toggle
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 't' && e.ctrlKey) {
+          testMode = !testMode;
+          if (testMode) {
+            startTestMode();
+            alert('🧪 Test mode ENABLED - generating dummy data');
+          } else {
+            alert('🔌 Test mode DISABLED - attempting real WebSocket');
+            connectWebSocket();
+          }
+        }
+      });
+    }
+
+    // Start everything when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
 </body>
 </html>
