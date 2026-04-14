@@ -1,3 +1,14 @@
-idf_component_register(SRCS "main.c"
-                    INCLUDE_DIRS "."
-                    REQUIRES esp_wifi)
+idf_component_register(SRCS 
+                        "main.c"
+                        INCLUDE_DIRS
+                        "."
+                        REQUIRES
+                        spi_flash
+                        esp_adc
+                        esp_wifi
+                        esp_lcd
+                        driver
+                        espressif__esp_lvgl_port
+                        lvgl__lvgl
+                        rm68140
+)

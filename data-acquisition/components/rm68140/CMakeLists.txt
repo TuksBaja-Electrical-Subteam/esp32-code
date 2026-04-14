@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "rm68140.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        esp_lcd
+        driver
+        log
+)
