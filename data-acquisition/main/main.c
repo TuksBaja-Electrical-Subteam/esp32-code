@@ -152,14 +152,16 @@ void app_main(void)
     adc_oneshot_chan_cfg_t leftback = {
         .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_12,
-    };
+    }; 
 
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_4, &rightfront);
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_5, &leftfront);
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_6, &rightback);
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_7, &leftback);
 
-    int rightfront_value;
+
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_4, &rightfront); //GPIO32
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_5, &leftfront);//GPIO33
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_6, &rightback);//GPIO34
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_7, &leftback);//GPIO35
+
+    /*int rightfront_value;
     adc_oneshot_read(adc_handle, ADC_CHANNEL_4, &rightfront_value);
 
     int leftfront_value;
@@ -175,6 +177,34 @@ void app_main(void)
     ESP_LOGI(TAG, "%d", leftfront_value);
     ESP_LOGI(TAG, "%d", rightback_value);
     ESP_LOGI(TAG, "%d", leftback_value);
+
+    */
+    
+     while (1) {
+        int values[4];
+        ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_4, &values[0]));
+        ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_5, &values[1]));
+        ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_6, &values[2]));
+        ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_CHANNEL_7, &values[3]));
+
+        // 🔍 Sift through data: find max value safely
+        int max_val = values[0];
+        int max_idx = 0;
+        for (int i = 1; i < 4; i++) {
+            if (values[i] > max_val) {
+                max_val = values[i];
+                max_idx = i;
+            }
+        }
+
+        ESP_LOGI(TAG, "RF:%d LF:%d RB:%d LB:%d | Max: CH%d=%d",
+                 values[0], values[1], values[2], values[3],
+                 max_idx, max_val);
+
+        // 🛡 Stability: add delay to avoid CPU hogging
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+
 }
 
 void reconnect_to_peer(void)
