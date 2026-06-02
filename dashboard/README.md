@@ -1,4 +1,4 @@
-# UPON CLONING FOLLOW THESE INSTRUCTIONS OR CRY LIKE WE DID
+# UPON CLONING FOLLOW THESE INSTRUCTIONS OR EISH HEEEEECTIC
 
 ## Export ESP-IDF Environment
 Every new user must run these commands after cloning the repo:
