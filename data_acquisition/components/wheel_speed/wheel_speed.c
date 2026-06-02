@@ -4,6 +4,8 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "wheel_speed.h"
+#include "../data_types/include/data_types.h"
+#include "../data_queues/include/data_queues.h"
 
 // GPIO Pin Assignments
 #define HALL_FL_GPIO GPIO_NUM_4
@@ -11,22 +13,30 @@
 #define HALL_RL_GPIO GPIO_NUM_4
 #define HALL_RR_GPIO GPIO_NUM_4
 
-// Per-wheel State
-static volatile uint32_t pulse_count[WHEEL_COUNT] = {0};
 static volatile int64_t last_pulse_time_us[WHEEL_COUNT] = {0};
+BaseType_t higher_priority_task_woken = pdFALSE;
 
+// Hall Effect Sensor Interrupt Handler
 static void IRAM_ATTR hall_isr_handler(void *arg)
 {
     int wheel = (int)(intptr_t)arg; // recover which wheel fired from the args
     int64_t now = esp_timer_get_time();
 
+    // Debouncing (5ms)
     if ((now - last_pulse_time_us[wheel]) > 5000)
     {
-        pulse_count[wheel]++;
-        last_pulse_time_us[wheel] = now;
+
+        SensorEvent_t sensorEvent = {
+            .sensor_id = wheel,
+            .timestamp_us = now,
+        };
+
+        // Push Sensor Event to queue
+        xQueueSendFromISR(wheelSensorQueue, &sensorEvent, &higher_priority_task_woken);
     }
 }
 
+// Called once in main.c
 void hall_sensor_init(void)
 {
     gpio_install_isr_service(0);
