@@ -1,7 +1,10 @@
 #ifndef DATA_QUEUES_H
 #define DATA_QUEUES_H
 
-QueueHandle_t wheelSensorQueue;
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
+extern QueueHandle_t wheelSensorQueue;
 void queues_init(void);
 
 #endif
