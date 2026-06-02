@@ -7,6 +7,7 @@
 // ── Wheel count constant ──────────────────────────────────────────────────────
 // Defined here so any file that includes this header can size arrays correctly
 #define WHEEL_COUNT 4
+#define MOVING_AVERAGE_WINDOW_SIZE 4
 
 // ── Wheel identifiers ─────────────────────────────────────────────────────────
 // Using an enum instead of raw integers makes call sites self-documenting.
@@ -53,5 +54,14 @@ void wheel_speed_reset_pulses(wheel_id_t wheel);
  * @return       Timestamp in microseconds, or 0 if no pulse has been seen yet.
  */
 int64_t wheel_speed_get_last_pulse_us(wheel_id_t wheel);
+
+typedef struct
+{
+    int64_t head;
+    float buffer[MOVING_AVERAGE_WINDOW_SIZE];
+    float runningSum;
+    int16_t count;
+
+} MovingAverage_t;
 
 #endif // WHEEL_SPEED_H
