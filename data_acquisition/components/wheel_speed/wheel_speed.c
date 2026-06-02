@@ -3,30 +3,34 @@
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "wheel_speed.h"
 
-// GPIO CONFIG
+// GPIO Pin Assignments
 #define HALL_FL_GPIO GPIO_NUM_4
 #define HALL_FR_GPIO GPIO_NUM_4
 #define HALL_RL_GPIO GPIO_NUM_4
 #define HALL_RR_GPIO GPIO_NUM_4
 
-// Hall Sensor Interrupt
-static volatile uint32_t pulse_count = 0;
-static volatile int64_t last_pulse_time_us = 0;
+// Per-wheel State
+static volatile uint32_t pulse_count[WHEEL_COUNT] = {0};
+static volatile int64_t last_pulse_time_us[WHEEL_COUNT] = {0};
 
 static void IRAM_ATTR hall_isr_handler(void *arg)
 {
-    // Debouncing
+    int wheel = (int)(intptr_t)arg; // recover which wheel fired from the args
     int64_t now = esp_timer_get_time();
-    if ((now - last_pulse_time_us) > 5000)
+
+    if ((now - last_pulse_time_us[wheel]) > 5000)
     {
-        pulse_count++;
-        last_pulse_time_us = now;
+        pulse_count[wheel]++;
+        last_pulse_time_us[wheel] = now;
     }
 }
 
 void hall_sensor_init(void)
 {
+    gpio_install_isr_service(0);
+
     gpio_config_t HALL_FL_CONF = {
         .intr_type = GPIO_INTR_NEGEDGE,
         .mode = GPIO_MODE_INPUT,
@@ -60,9 +64,8 @@ void hall_sensor_init(void)
     gpio_config(&HALL_FR_CONF);
     gpio_config(&HALL_RL_CONF);
     gpio_config(&HALL_RR_CONF);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(HALL_FL_GPIO, hall_isr_handler, NULL);
-    gpio_isr_handler_add(HALL_FR_GPIO, hall_isr_handler, NULL);
-    gpio_isr_handler_add(HALL_RL_GPIO, hall_isr_handler, NULL);
-    gpio_isr_handler_add(HALL_RR_GPIO, hall_isr_handler, NULL);
+    gpio_isr_handler_add(HALL_FL_GPIO, hall_isr_handler, (void *)(intptr_t)0);
+    gpio_isr_handler_add(HALL_FR_GPIO, hall_isr_handler, (void *)(intptr_t)1);
+    gpio_isr_handler_add(HALL_RL_GPIO, hall_isr_handler, (void *)(intptr_t)2);
+    gpio_isr_handler_add(HALL_RR_GPIO, hall_isr_handler, (void *)(intptr_t)3);
 }
