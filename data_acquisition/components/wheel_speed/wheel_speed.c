@@ -8,13 +8,25 @@
 #include "../data_queues/include/data_queues.h"
 
 // GPIO Pin Assignments
-#define HALL_FL_GPIO GPIO_NUM_4
-#define HALL_FR_GPIO GPIO_NUM_4
-#define HALL_RL_GPIO GPIO_NUM_4
-#define HALL_RR_GPIO GPIO_NUM_4
+#define HALL_FL_GPIO GPIO_NUM_13
+#define HALL_FR_GPIO GPIO_NUM_12
+#define HALL_RL_GPIO GPIO_NUM_14
+#define HALL_RR_GPIO GPIO_NUM_27
 
 static volatile int64_t last_pulse_time_us[WHEEL_COUNT] = {0};
 BaseType_t higher_priority_task_woken = pdFALSE;
+
+static void processing(void *arg)
+{
+    SensorEvent_t event;
+    while (1)
+    {
+        if (xQueueReceive(wheelSensorQueue, &event, portMAX_DELAY))
+        {
+            ESP_LOGI("SENSOR", "Data received: %lu", event.sensor_id, event.timestamp_us);
+        }
+    }
+}
 
 // Hall Effect Sensor Interrupt Handler
 static void IRAM_ATTR hall_isr_handler(void *arg)
@@ -22,8 +34,8 @@ static void IRAM_ATTR hall_isr_handler(void *arg)
     int wheel = (int)(intptr_t)arg; // recover which wheel fired from the args
     int64_t now = esp_timer_get_time();
 
-    // Debouncing (5ms)
-    if ((now - last_pulse_time_us[wheel]) > 5000)
+    // Debouncing (500ms)
+    if ((now - last_pulse_time_us[wheel]) > 500000)
     {
 
         SensorEvent_t sensorEvent = {
@@ -78,4 +90,6 @@ void hall_sensor_init(void)
     gpio_isr_handler_add(HALL_FR_GPIO, hall_isr_handler, (void *)(intptr_t)1);
     gpio_isr_handler_add(HALL_RL_GPIO, hall_isr_handler, (void *)(intptr_t)2);
     gpio_isr_handler_add(HALL_RR_GPIO, hall_isr_handler, (void *)(intptr_t)3);
+
+    xTaskCreate(processing, "processing", 2048, NULL, 10, NULL);
 }
