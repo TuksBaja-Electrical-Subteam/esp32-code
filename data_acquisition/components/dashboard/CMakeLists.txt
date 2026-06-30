@@ -1,6 +1,5 @@
 idf_component_register(
     SRCS 
-        "main.c"
         "web_server.c"
         "gps_handler.c"
         "wifi_manager.c"
