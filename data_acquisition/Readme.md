@@ -1,4 +1,5 @@
 # Key Components
+    - dashboard   -> Connect to this over WiFi to visualize data
     - data_queues -> This is where RTOS queues are configured
     - wheel_speed -> Gathers raw sensor data from hall effects sensors and pushes it to a queue
 
