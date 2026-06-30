@@ -2,7 +2,7 @@
 # Run this once per terminal session
 # Usage: . .\bootstrap.ps1  (the leading dot is important, same reason as 'source')
 
-$IDF_PATH = "$env:USERPROFILE\esp\v5.5.1\esp-idf"
+$IDF_PATH = "C:\esp\v5.5.4\esp-idf"
 
 if (-not (Test-Path $IDF_PATH)) {
     Write-Error "ESP-IDF not found at $IDF_PATH"
