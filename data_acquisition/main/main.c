@@ -2,6 +2,7 @@
 #include "data_types.h"
 #include "data_queues.h"
 #include "wheel_speed.h"
+#include "display.h"
 
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -23,6 +24,7 @@ void app_main(void)
 {
     queues_init();
     hall_sensor_init();
+    display_init();
 
     ESP_LOGI(TAG, "=================================");
     ESP_LOGI(TAG, "   BAJA Dash PRO - Starting");
