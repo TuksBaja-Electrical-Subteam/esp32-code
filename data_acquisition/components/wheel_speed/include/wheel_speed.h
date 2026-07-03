@@ -6,11 +6,6 @@
 #include "driver/gpio.h"
 #include "data_types.h"
 
-// ── Wheel count constant ──────────────────────────────────────────────────────
-// Defined here so any file that includes this header can size arrays correctly
-#define WHEEL_COUNT 4
-#define MOVING_AVERAGE_WINDOW_SIZE 4
-
 // ── Initialisation ────────────────────────────────────────────────────────────
 /**
  * @brief Configure GPIO pins and attach interrupt handlers for all four

@@ -2,6 +2,7 @@
 #include "data_types.h"
 #include "data_queues.h"
 #include "wheel_speed.h"
+#include "display.h"
 
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -14,7 +15,7 @@
 #include "gps_handler.h"
 
 #define TAG "MAIN"
-#define HALL_SENSOR_GPIO 18
+#define HALL_SENSOR_GPIO 19
 #define WHEEL_CIRCUMFERENCE 1.72f
 #define GPS_TX_GPIO 17
 #define GPS_RX_GPIO 16
@@ -23,6 +24,7 @@ void app_main(void)
 {
     queues_init();
     hall_sensor_init();
+    display_init();
 
     ESP_LOGI(TAG, "=================================");
     ESP_LOGI(TAG, "   BAJA Dash PRO - Starting");

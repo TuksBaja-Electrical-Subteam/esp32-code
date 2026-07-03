@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define MOVING_AVERAGE_WINDOW_SIZE 10
+#define WHEEL_COUNT 4
+
 typedef enum
 {
     WHEEL_FRONT_LEFT = 0,
