@@ -9,7 +9,7 @@
 #include "freertos/semphr.h"
 
 // NOTE: uS -> microseconds
-#define HALL_SENSOR_DEBOUNCE_uS 500000
+#define HALL_SENSOR_DEBOUNCE_uS 10000
 #define RPM_UPDATE_TIMEOUT_uS 1000000
 
 // GPIO Pin Assignments
@@ -57,6 +57,7 @@ float readMovingAverage(WheelInfo_t *wheelInfo)
     return wheelInfo->movingAverage.runningSum / wheelInfo->movingAverage.count;
 }
 
+// Getter to safely consume wheel rpm data via mutex. See full usage instructions in header file
 bool wheel_speed_get_all_rpm(float out_rpm[WHEEL_COUNT])
 {
     if (xSemaphoreTake(wheelInfoMutex, pdMS_TO_TICKS(5)) != pdTRUE)

@@ -21,13 +21,36 @@ void hall_sensor_init(void);
 
 // ── Data accessors ────────────────────────────────────────────────────────────
 /**
- * @brief Atomically copy the current moving-average RPM for all four wheels
- *        into the provided array.
+ * @brief Get the current moving-average RPM for all four wheels.
  *
- * @param out_rpm  Array of WHEEL_COUNT float values to fill.
- *                 Index with WheelIndex_t: out_rpm[WHEEL_FRONT_LEFT], etc.
- * @return         true if the read succeeded, false if the lock could not
- *                 be acquired in time (caller should keep its previous values).
+ * Thread-safe: acquires wheelInfoMutex internally, so this is safe to call
+ * from any task (display, logging, etc.) without additional locking.
+ *
+ * USAGE:
+ *   1. Declare a local array: float rpm[WHEEL_COUNT];
+ *   2. Call this function, passing that array.
+ *   3. Check the return value before using the data — see below.
+ *   4. Index into the array using WheelIndex_t (data_types.h), e.g.
+ *      rpm[WHEEL_FRONT_LEFT], rpm[WHEEL_REAR_RIGHT].
+ *
+ * Example:
+ *   float rpm[WHEEL_COUNT];
+ *   if (wheel_speed_get_all_rpm(rpm))
+ *   {
+ *       // rpm[] now holds fresh values, safe to read/display/log
+ *   }
+ *
+ * Call this periodically from within your own task's loop (e.g. once per
+ * display refresh, every 100-200ms) — it does not block waiting for new
+ * sensor data, it just returns whatever the current moving average is at
+ * the moment of the call.
+ *
+ * @param out_rpm  Caller-provided array of WHEEL_COUNT floats to fill.
+ * @return true  if the read succeeded and out_rpm now holds fresh values.
+ * @return false if the mutex could not be acquired within the timeout
+ *               (rare — indicates heavy lock contention). In this case
+ *               out_rpm is left untouched; the caller should keep using
+ *               its previous values rather than treating this as zero.
  */
 bool wheel_speed_get_all_rpm(float out_rpm[WHEEL_COUNT]);
 
