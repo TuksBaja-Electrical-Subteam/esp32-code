@@ -55,13 +55,6 @@ void wheel_speed_reset_pulses(wheel_id_t wheel);
  */
 int64_t wheel_speed_get_last_pulse_us(wheel_id_t wheel);
 
-typedef struct
-{
-    int64_t head;
-    float buffer[MOVING_AVERAGE_WINDOW_SIZE];
-    float runningSum;
-    int16_t count;
-
-} MovingAverage_t;
+bool wheel_speed_get_all_rpm(float out_rpm[WHEEL_COUNT]);
 
 #endif // WHEEL_SPEED_H

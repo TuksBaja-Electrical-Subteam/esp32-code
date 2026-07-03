@@ -6,6 +6,7 @@
 #include "wheel_speed.h"
 #include "data_types.h"
 #include "data_queues.h"
+#include "freertos/semphr.h"
 
 // NOTE: uS -> microseconds
 #define HALL_SENSOR_DEBOUNCE_uS 500000
@@ -18,6 +19,7 @@
 #define HALL_RR_GPIO GPIO_NUM_27
 
 // The processed information about each wheel
+static SemaphoreHandle_t wheelInfoMutex;
 static WheelInfo_t wheelInfos[4];
 
 // Used in ISR Handler
@@ -55,36 +57,45 @@ float readMovingAverage(WheelInfo_t *wheelInfo)
     return wheelInfo->movingAverage.runningSum / wheelInfo->movingAverage.count;
 }
 
+bool wheel_speed_get_all_rpm(float out_rpm[WHEEL_COUNT])
+{
+    if (xSemaphoreTake(wheelInfoMutex, pdMS_TO_TICKS(5)) != pdTRUE)
+    {
+        return false; // couldn't get the lock in time, caller keeps old values
+    }
+
+    for (int i = 0; i < WHEEL_COUNT; i++)
+    {
+        out_rpm[i] = readMovingAverage(&wheelInfos[i]);
+    }
+
+    xSemaphoreGive(wheelInfoMutex);
+    return true;
+}
+
 void processing(void *arg)
 {
-
     while (1)
     {
         SensorEvent_t event;
 
-        int64_t previous = 0;
-
         while (xQueueReceive(wheelSensorQueue, &event, 0) == pdTRUE)
         {
-            // ESP_LOGI("SENSOR", "Data received: %lu", event.sensor_id, event.timestamp_us);
+            xSemaphoreTake(wheelInfoMutex, portMAX_DELAY);
 
-            previous = wheelInfos[event.sensor_id].lastTimestamp;
+            int64_t previous = wheelInfos[event.sensor_id].lastTimestamp;
             wheelInfos[event.sensor_id].lastTimestamp = event.timestamp_us;
             if (previous != 0)
             {
                 float period_us = (float)(event.timestamp_us - previous);
                 float period_s = period_us / 1000000.0f;
                 float rpm = (1.0f / period_s) * 60.0f;
-
-                // push rpm into moving average
                 pushToMovingAverage(&wheelInfos[event.sensor_id].movingAverage, rpm);
             }
+
+            xSemaphoreGive(wheelInfoMutex);
         }
 
-        float rpm = readMovingAverage(&wheelInfos[WHEEL_REAR_RIGHT]);
-        ESP_LOGI("PROCESSING", "Front Left RPM: %.2f", rpm);
-
-        // Make task sleep for 50ms, allowing ISRs to populate queue again
         vTaskDelay(50);
     }
 }
@@ -151,6 +162,13 @@ void hall_sensor_init(void)
     gpio_isr_handler_add(HALL_FR_GPIO, hall_isr_handler, (void *)(intptr_t)1);
     gpio_isr_handler_add(HALL_RL_GPIO, hall_isr_handler, (void *)(intptr_t)2);
     gpio_isr_handler_add(HALL_RR_GPIO, hall_isr_handler, (void *)(intptr_t)3);
+
+    wheelInfoMutex = xSemaphoreCreateMutex();
+    if (wheelInfoMutex == NULL)
+    {
+        ESP_LOGE("MUTEX", "Failed to create wheelInfo mutex — insufficient heap memory perhaps?");
+        abort();
+    }
 
     xTaskCreate(processing, "processing", 2048, NULL, 10, NULL);
 }

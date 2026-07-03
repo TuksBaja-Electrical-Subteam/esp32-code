@@ -2,7 +2,6 @@
 #define DATA_TYPES_H
 
 #include <stdint.h>
-#include "wheel_speed.h"
 
 typedef enum
 {
@@ -17,6 +16,15 @@ typedef struct
     uint8_t sensor_id;
     int64_t timestamp_us;
 } SensorEvent_t;
+
+typedef struct
+{
+    int64_t head;
+    float buffer[MOVING_AVERAGE_WINDOW_SIZE];
+    float runningSum;
+    int16_t count;
+
+} MovingAverage_t;
 
 typedef struct
 {
