@@ -1,4 +1,4 @@
-# TuksBaja Telemetry — ESP32 Dashboard
+# TuksBaja Telemetry | ESP32 Dashboard
 
 Iteration 1 of the electrical subteam's telemetry system. An ESP32 running
 ESP-IDF reads wheel speed from four Hall effect sensors and displays live
