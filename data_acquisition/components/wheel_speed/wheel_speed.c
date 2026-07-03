@@ -158,10 +158,10 @@ void hall_sensor_init(void)
     gpio_config(&HALL_FR_CONF);
     gpio_config(&HALL_RL_CONF);
     gpio_config(&HALL_RR_CONF);
-    gpio_isr_handler_add(HALL_FL_GPIO, hall_isr_handler, (void *)(intptr_t)0);
-    gpio_isr_handler_add(HALL_FR_GPIO, hall_isr_handler, (void *)(intptr_t)1);
-    gpio_isr_handler_add(HALL_RL_GPIO, hall_isr_handler, (void *)(intptr_t)2);
-    gpio_isr_handler_add(HALL_RR_GPIO, hall_isr_handler, (void *)(intptr_t)3);
+    gpio_isr_handler_add(HALL_FL_GPIO, hall_isr_handler, (void *)(intptr_t)WHEEL_FRONT_LEFT);
+    gpio_isr_handler_add(HALL_FR_GPIO, hall_isr_handler, (void *)(intptr_t)WHEEL_FRONT_RIGHT);
+    gpio_isr_handler_add(HALL_RL_GPIO, hall_isr_handler, (void *)(intptr_t)WHEEL_REAR_LEFT);
+    gpio_isr_handler_add(HALL_RR_GPIO, hall_isr_handler, (void *)(intptr_t)WHEEL_REAR_RIGHT);
 
     wheelInfoMutex = xSemaphoreCreateMutex();
     if (wheelInfoMutex == NULL)
