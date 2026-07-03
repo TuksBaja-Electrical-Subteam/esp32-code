@@ -15,7 +15,7 @@
 #include "gps_handler.h"
 
 #define TAG "MAIN"
-#define HALL_SENSOR_GPIO 18
+#define HALL_SENSOR_GPIO 19
 #define WHEEL_CIRCUMFERENCE 1.72f
 #define GPS_TX_GPIO 17
 #define GPS_RX_GPIO 16
