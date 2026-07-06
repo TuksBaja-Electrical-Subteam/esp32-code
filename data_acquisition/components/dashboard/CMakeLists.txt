@@ -15,4 +15,6 @@ idf_component_register(
         esp_event
     PRIV_REQUIRES
         esp_timer
+        wheel_speed
+        data_types
 )
