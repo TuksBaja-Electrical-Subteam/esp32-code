@@ -16,5 +16,5 @@ idf_component_register(
     PRIV_REQUIRES
         esp_timer
         wheel_speed
-        data_types
+        data_types esp_driver_pcnt esp_driver_uart
 )

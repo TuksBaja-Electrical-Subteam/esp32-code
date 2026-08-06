@@ -29,7 +29,7 @@ static void speed_calc_task(void* pvParameters) {
             // Calculate speed: pulses per sec * circumference * 3.6 for km/h
             _current_speed = (pulses * _wheel_circumference) * 3.6;
             
-            ESP_LOGI(TAG, "Speed: %.1f km/h | Odo: %.3f km", _current_speed, _total_distance_km);
+            ESP_LOGI(TAG, "Speed: %.1f km/h | Odo: %.3f km", _current_speed, _total_distance_km,pulses);
         }
     }
 }
@@ -38,17 +38,34 @@ void speed_calc_init(int gpio_num, float initial_circumference) {
     if (pcnt_unit != NULL) return;
     _wheel_circumference = initial_circumference;
     
-    gpio_set_pull_mode(gpio_num, GPIO_PULLUP_ONLY);
+    // Explicitly configure the GPIO as an input with a pullup before passing it to PCNT
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = (1ULL << gpio_num),
+        .pull_down_en = 0,
+        .pull_up_en = 1
+    };
+    gpio_config(&io_conf);
 
-    pcnt_unit_config_t unit_config = { .high_limit = 2000, .low_limit = -2000 }; 
+    // FIX 1: Set massive limits so it never wraps during the 1-second task delay
+    pcnt_unit_config_t unit_config = { 
+        .high_limit = 10000, 
+        .low_limit = -10000 
+    }; 
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
 
-    pcnt_chan_config_t chan_config = { .edge_gpio_num = gpio_num, .level_gpio_num = -1 };
+    pcnt_chan_config_t chan_config = { 
+        .edge_gpio_num = gpio_num, 
+        .level_gpio_num = -1 
+    };
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
 
-    pcnt_glitch_filter_config_t filter_config = { .max_glitch_ns = 10000 };
+ 
+    pcnt_glitch_filter_config_t filter_config = { .max_glitch_ns = 1000 };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
+    
     ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
 
     ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));

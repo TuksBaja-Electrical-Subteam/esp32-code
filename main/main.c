@@ -26,9 +26,8 @@ void app_main(void)
     hall_sensor_init();
     display_init();
 
-    ESP_LOGI(TAG, "=================================");
-    ESP_LOGI(TAG, "   BAJA Dash PRO - Starting");
-    ESP_LOGI(TAG, "=================================");
+    ESP_LOGI(TAG, "Dashboard - starting");
+
 
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
