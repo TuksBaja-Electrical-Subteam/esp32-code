@@ -68,9 +68,10 @@ static void display_task(void *arg)
     {
         if (wheel_speed_get_all_rpm(rpm))
         {
-            float rr_rpm = rpm[WHEEL_REAR_RIGHT];
-            float speed_kmh = (rr_rpm * WHEEL_CIRCUMFERENCE_M / 60.0f) * 3.6f;
-            ui_update(speed_kmh, rr_rpm);
+            float avg_rpm = (rpm[WHEEL_FRONT_LEFT] + rpm[WHEEL_FRONT_RIGHT] +
+                              rpm[WHEEL_REAR_LEFT] + rpm[WHEEL_REAR_RIGHT]) / 4.0f;
+            float speed_kmh = (avg_rpm * WHEEL_CIRCUMFERENCE_M / 60.0f) * 3.6f;
+            ui_update(speed_kmh, avg_rpm);
         }
 
         // Let LVGL process animations, input, and trigger flushes.
